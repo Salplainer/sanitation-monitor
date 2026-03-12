@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💧 Sanitation Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b1a10;
+    --surface:   #0f2318;
+    --surface2:  #132b1c;
+    --border:    #1e4029;
+    --accent:    #4caf7d;
+    --accent2:   #2e7d52;
+    --text:      #d4ead9;
+    --muted:     #5a8a6a;
+    --faint:     #2a4a32;
+
+    --mech-bg:   #162d1a; --mech-border: #2e6b35; --mech-tag: #4caf50; --mech-text: #c8e6c9;
+    --govt-bg:   #2a1e08; --govt-border: #7a5010; --govt-tag: #ff9800; --govt-text: #ffe0b2;
+    --orgs-bg:   #121e30; --orgs-border: #1e4a8a; --orgs-tag: #4a90d9; --orgs-text: #bbdefb;
+    --evnt-bg:   #1e0e2e; --evnt-border: #5a1a8a; --evnt-tag: #ab47bc; --evnt-text: #e1bee7;
+    --inci-bg:   #2a0e0e; --inci-border: #8a1f1f; --inci-tag: #e53935; --inci-text: #ffcdd2;
+    --wash-bg:   #0e1e2e; --wash-border: #1a4a7a; --wash-tag: #29b6f6; --wash-text: #b3e5fc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(160deg, #0a2e18 0%, #0d3d20 60%, #0b2914 100%);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.6);
+  }
+
+  .header-top {
+    max-width: 1300px; margin: 0 auto;
+    padding: 18px 24px 12px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+
+  .brand { flex: 1; }
+  .brand h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; font-weight: 400;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  .brand p {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .header-stats {
+    display: flex; gap: 20px; align-items: center;
+  }
+  .stat-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    background: var(--faint);
+    padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .stat-pill span { color: var(--accent); font-weight: 500; }
+
+  .new-badge {
+    background: #c62828; color: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; font-weight: 500;
+    padding: 2px 8px; border-radius: 12px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+  .controls { display: flex; gap: 10px; align-items: center; }
+
+  .search-wrap {
+    position: relative;
+  }
+  .search-wrap input {
+    background: #0a1e10;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px 8px 34px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; width: 220px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent2); }
+  .search-wrap::before {
+    content: "⌕"; position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); color: var(--muted); font-size: 16px;
+    pointer-events: none;
+  }
+
+  .btn {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    border-radius: 6px; padding: 8px 16px; cursor: pointer;
+    border: 1px solid; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent2); color: #c8e6c9;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #1b5e35; }
+  .btn-primary:disabled { background: var(--faint); color: var(--muted); cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border-color: var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent2); color: var(--accent); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 3px; background: var(--faint);
+    display: none;
+  }
+  .progress-bar.active { display: block; }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.4s ease; width: 0%;
+  }
+
+  /* ── CATEGORY TABS ── */
+  .tabs-wrap {
+    max-width: 1300px; margin: 0 auto;
+    padding: 0 24px;
+    display: flex; gap: 2px; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+
+  .tab {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    padding: 10px 16px 8px; cursor: pointer;
+    border: none; background: transparent;
+    color: var(--muted); border-bottom: 3px solid transparent;
+    white-space: nowrap; transition: all 0.15s;
+    border-radius: 4px 4px 0 0;
+  }
+  .tab:hover { color: var(--accent); }
+  .tab.active {
+    color: #fff; font-weight: 500;
+    border-bottom-color: var(--accent);
+    background: rgba(76,175,125,0.08);
+  }
+  .tab .count { opacity: 0.6; margin-left: 4px; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    background: #0a1a10; border-bottom: 1px solid var(--border);
+    padding: 8px 24px;
+  }
+  .stats-inner {
+    max-width: 1300px; margin: 0 auto;
+    display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+  }
+  .cat-dot {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--muted); cursor: pointer;
+    transition: color 0.15s;
+  }
+  .cat-dot:hover { color: var(--text); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .cat-dot strong { color: var(--accent); }
+  .total-info {
+    margin-left: auto; font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--faint);
+  }
+
+  /* ── MAIN GRID ── */
+  main {
+    max-width: 1300px; margin: 0 auto;
+    padding: 24px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+    gap: 14px;
+  }
+
+  /* ── ARTICLE CARD ── */
+  .card {
+    border-radius: 10px;
+    padding: 16px;
+    border-left-width: 4px; border-left-style: solid;
+    border-top: 1px solid; border-right: 1px solid; border-bottom: 1px solid;
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer; position: relative;
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .card:hover {
+    transform: translateY(-3px);
+  }
+  .card.is-new { }
+  .card.is-read { opacity: 0.65; }
+
+  .card[data-cat="Mechanisation"]      { background: var(--mech-bg); border-color: var(--mech-border); border-left-color: var(--mech-tag); }
+  .card[data-cat="India - Government"] { background: var(--govt-bg); border-color: var(--govt-border); border-left-color: var(--govt-tag); }
+  .card[data-cat="Orgs & Research"]    { background: var(--orgs-bg); border-color: var(--orgs-border); border-left-color: var(--orgs-tag); }
+  .card[data-cat="Events"]             { background: var(--evnt-bg); border-color: var(--evnt-border); border-left-color: var(--evnt-tag); }
+  .card[data-cat="India - Incidents"]  { background: var(--inci-bg); border-color: var(--inci-border); border-left-color: var(--inci-tag); }
+  .card[data-cat="Global - WASH"]      { background: var(--wash-bg); border-color: var(--wash-border); border-left-color: var(--wash-tag); }
+
+  .card:hover[data-cat="Mechanisation"]      { box-shadow: 0 8px 24px rgba(76,175,80,0.15); }
+  .card:hover[data-cat="India - Government"] { box-shadow: 0 8px 24px rgba(255,152,0,0.15); }
+  .card:hover[data-cat="Orgs & Research"]    { box-shadow: 0 8px 24px rgba(74,144,217,0.15); }
+  .card:hover[data-cat="Events"]             { box-shadow: 0 8px 24px rgba(171,71,188,0.15); }
+  .card:hover[data-cat="India - Incidents"]  { box-shadow: 0 8px 24px rgba(229,57,53,0.15); }
+  .card:hover[data-cat="Global - WASH"]      { box-shadow: 0 8px 24px rgba(41,182,246,0.15); }
+
+  .new-dot {
+    position: absolute; top: 12px; right: 12px;
+    font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500;
+    padding: 2px 7px; border-radius: 4px; color: white;
+    letter-spacing: 0.08em;
+  }
+  .card[data-cat="Mechanisation"] .new-dot     { background: var(--mech-tag); }
+  .card[data-cat="India - Government"] .new-dot { background: var(--govt-tag); }
+  .card[data-cat="Orgs & Research"] .new-dot   { background: var(--orgs-tag); }
+  .card[data-cat="Events"] .new-dot            { background: var(--evnt-tag); }
+  .card[data-cat="India - Incidents"] .new-dot { background: var(--inci-tag); }
+  .card[data-cat="Global - WASH"] .new-dot     { background: var(--wash-tag); }
+
+  .card-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 9px; flex-wrap: wrap;
+  }
+  .cat-tag {
+    font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+    padding: 2px 7px; border-radius: 3px; letter-spacing: 0.05em;
+  }
+  .card[data-cat="Mechanisation"] .cat-tag     { background: rgba(76,175,80,0.15);  color: var(--mech-tag); }
+  .card[data-cat="India - Government"] .cat-tag { background: rgba(255,152,0,0.15); color: var(--govt-tag); }
+  .card[data-cat="Orgs & Research"] .cat-tag   { background: rgba(74,144,217,0.15); color: var(--orgs-tag); }
+  .card[data-cat="Events"] .cat-tag            { background: rgba(245,166,35,0.15); color: var(--evnt-tag); }
+  .card[data-cat="India - Incidents"] .cat-tag { background: rgba(229,57,53,0.15);  color: var(--inci-tag); }
+  .card[data-cat="Global - WASH"] .cat-tag     { background: rgba(41,182,246,0.15); color: var(--wash-tag); }
+
+  .card-time {
+    font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted);
+  }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px; font-weight: 400; line-height: 1.4;
+    margin-bottom: 8px; color: var(--text);
+    text-decoration: none; display: block;
+    transition: color 0.15s;
+  }
+  .card-title:hover { color: var(--accent); }
+
+  .card-summary {
+    font-size: 12px; color: var(--muted);
+    line-height: 1.6; margin-bottom: 10px;
+  }
+
+  .card-footer {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--faint); display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ── EMPTY / LOADING STATES ── */
+  .state-center {
+    grid-column: 1/-1;
+    text-align: center; padding: 80px 20px;
+    color: var(--muted);
+  }
+  .state-center .icon { font-size: 48px; margin-bottom: 16px; }
+  .state-center h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px; font-weight: 400; margin-bottom: 8px;
+    color: var(--text);
+  }
+  .state-center p {
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+  }
+  .spinner {
+    display: inline-block; animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SCROLL TO TOP ── */
+  #scrollTop {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--accent2); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 50%;
+    width: 40px; height: 40px; font-size: 18px;
+    cursor: pointer; display: none; align-items: center;
+    justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    transition: all 0.2s; z-index: 50;
+  }
+  #scrollTop.visible { display: flex; }
+  #scrollTop:hover { background: var(--accent); color: #fff; }
+
+  /* ── MARK ALL READ ── */
+  .toolbar {
+    max-width: 1300px; margin: 0 auto;
+    padding: 0 24px 16px;
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .header-top { padding: 14px 16px 10px; }
+    .brand h1 { font-size: 20px; }
+    .header-stats { display: none; }
+    .controls { width: 100%; }
+    .search-wrap input { width: 100%; flex: 1; }
+    main { padding: 16px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand">
+      <h1>💧 Sanitation Monitor</h1>
+      <p id="lastFetched">Loading feeds…</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill">Feeds: <span id="feedCount">0</span></div>
+      <div class="stat-pill">Articles: <span id="totalCount">0</span></div>
+      <div class="stat-pill">Next refresh: <span id="countdown">—</span></div>
+      <div class="new-badge" id="newBadge" style="display:none"></div>
+    </div>
+    <div class="controls">
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Search articles…" />
+      </div>
+      <button class="btn btn-primary" id="refreshBtn" onclick="fetchAll()">⟳ Refresh</button>
+    </div>
+  </div>
+
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="tabs-wrap" id="tabs"></div>
+</header>
+
+<div class="stats-row">
+  <div class="stats-inner" id="statsInner"></div>
+</div>
+
+<div class="toolbar">
+  <button class="btn btn-ghost" onclick="markAllRead()">✓ Mark all read</button>
+  <button class="btn btn-ghost" onclick="clearRead()">↺ Show unread only</button>
+</div>
+
+<main>
+  <div class="grid" id="grid">
+    <div class="state-center">
+      <div class="icon"><span class="spinner">⟳</span></div>
+      <h3>Fetching your feeds…</h3>
+      <p>Checking all 46 sources. This takes about 30–60 seconds.</p>
+    </div>
+  </div>
+</main>
+
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+const FEEDS = [
+  // ── Mechanisation ──────────────────────────────────────────
+  ["Mechanisation","Sanitation entrepreneurship & FSM","https://news.google.com/rss/search?q=sanitation+entrepreneurship+feacal+sludge+management"],
+  ["Mechanisation","Robotic sewer cleaning India","https://news.google.com/rss/search?q=robotic+sewer+cleaning+India"],
+  ["Mechanisation","Manhole to Machinehole India","https://news.google.com/rss/search?q=manhole+to+machinehole+India"],
+  ["Mechanisation","Manual scavenging mechanisation","https://news.google.com/rss/search?q=manual+scavenging+mechanisation"],
+  ["Mechanisation","Garv Toilets sanitation","https://news.google.com/rss/search?q=Garv+Toilets+sanitation"],
+  ["Mechanisation","Solinas robot sewer","https://news.google.com/rss/search?q=Solinas+robot+sewer"],
+  ["Mechanisation","Genrobotics Bandicoot","https://news.google.com/rss/search?q=Genrobotics+Bandicoot"],
+  ["Mechanisation","Mechanised sewer cleaning India","https://news.google.com/rss/search?q=mechanised+sewer+cleaning+India"],
+  ["Mechanisation","Desludging technology India","https://news.google.com/rss/search?q=desludging+technology+india"],
+  ["Mechanisation","Sewer worker safety technology","https://news.google.com/rss/search?q=sewer+worker+safety+technology"],
+  ["Mechanisation","FSM technology conference","https://news.google.com/rss/search?q=faecal+sludge+management+technology+conference"],
+  ["Mechanisation","NSKFDC sewer cleaning machine","https://news.google.com/rss/search?q=NSKFDC+sewer+cleaning+machine"],
+  ["Mechanisation","Sanitation innovation startup","https://news.google.com/rss/search?q=sanitation+innovation+startup+India"],
+  ["Mechanisation","Toilet technology innovation","https://news.google.com/rss/search?q=toilet+technology+innovation+India"],
+
+  // ── India - Government ──────────────────────────────────────
+  ["India - Government","PIB Jal Shakti sanitation","https://news.google.com/rss/search?q=site:pib.gov.in+sanitation"],
+  ["India - Government","PIB Swachh Bharat","https://news.google.com/rss/search?q=site:pib.gov.in+Swachh+Bharat"],
+  ["India - Government","Jal Shakti Ministry sanitation","https://news.google.com/rss/search?q=Jal+Shakti+Ministry+sanitation"],
+  ["India - Government","DDWS press release","https://news.google.com/rss/search?q=Department+Drinking+Water+Sanitation+India"],
+  ["India - Government","Swachh Bharat Mission Grameen","https://news.google.com/rss/search?q=Swachh+Bharat+Mission+Grameen+2024"],
+  ["India - Government","ODF Plus villages India","https://news.google.com/rss/search?q=ODF+Plus+villages+India"],
+  ["India - Government","Jal Jeevan Mission","https://news.google.com/rss/search?q=Jal+Jeevan+Mission+sanitation"],
+  ["India - Government","AMRUT sanitation urban","https://news.google.com/rss/search?q=AMRUT+sanitation+urban+India"],
+  ["India - Government","NMCG Ganga sanitation","https://news.google.com/rss/search?q=NMCG+Ganga+sanitation+sewage"],
+  ["India - Government","SBM Urban sanitation","https://news.google.com/rss/search?q=Swachh+Bharat+Mission+Urban+sanitation"],
+  ["India - Government","NHRC manual scavenging","https://news.google.com/rss/search?q=NHRC+manual+scavenging+India"],
+  ["India - Government","Supreme Court sewer safai karmachari","https://news.google.com/rss/search?q=Supreme+Court+sewer+sanitation+workers+India"],
+  ["India - Government","Swachh Survekshan rankings","https://news.google.com/rss/search?q=Swachh+Survekshan+2024+2025"],
+  ["India - Government","MoHUA sanitation urban","https://news.google.com/rss/search?q=Ministry+Housing+Urban+Affairs+sanitation"],
+  ["India - Government","NSKFDC safai karmachari welfare","https://news.google.com/rss/search?q=NSKFDC+safai+karmachari+welfare"],
+
+  // ── Orgs & Research ─────────────────────────────────────────
+  ["Orgs & Research","Global Sanitation Fund","https://news.google.com/rss/search?q=Global+Sanitation+Fund"],
+  ["Orgs & Research","UNICEF sanitation workers","https://news.google.com/rss/search?q=UNICEF+sanitation+workers"],
+  ["Orgs & Research","World Bank sanitation","https://news.google.com/rss/search?q=World+Bank+sanitation"],
+  ["Orgs & Research","NAMASTE sanitation workers","https://news.google.com/rss/search?q=NAMASTE+sanitation+workers"],
+  ["Orgs & Research","CSE faecal sludge management","https://news.google.com/rss/search?q=CSE+faecal+sludge+management"],
+  ["Orgs & Research","FSM Alliance","https://news.google.com/rss/search?q=Faecal+Sludge+Management+Alliance"],
+  ["Orgs & Research","India Sanitation Coalition","https://news.google.com/rss/search?q=India+Sanitation+Coalition"],
+  ["Orgs & Research","Gates Foundation sanitation","https://news.google.com/rss/search?q=Gates+Foundation+sanitation"],
+  ["Orgs & Research","Safai Karmachari Andolan","https://news.google.com/rss/search?q=Safai+Karmachari+Andolan"],
+  ["Orgs & Research","Sanitation and Water for All","https://news.google.com/rss/search?q=Sanitation+and+Water+for+All"],
+  ["Orgs & Research","WHO sanitation","https://news.google.com/rss/search?q=WHO+sanitation"],
+  ["Orgs & Research","WaterAid sanitation","https://news.google.com/rss/search?q=WaterAid+sanitation"],
+  ["Orgs & Research","Faecal sludge management","https://news.google.com/rss/search?q=faecal+sludge+management"],
+  ["Orgs & Research","Sanitation Learning Hub","https://api.rss2json.com/v1/api.json?rss_url=https://sanitationlearninghub.org/feed/"],
+  ["Orgs & Research","UN Water","https://api.rss2json.com/v1/api.json?rss_url=https://www.unwater.org/rss.xml"],
+  ["Orgs & Research","IRC WASH","https://api.rss2json.com/v1/api.json?rss_url=https://www.ircwash.org/rss.xml"],
+  ["Orgs & Research","CPR India","https://api.rss2json.com/v1/api.json?rss_url=https://cprindia.org/feed/"],
+  ["Orgs & Research","SuSanA","https://api.rss2json.com/v1/api.json?rss_url=https://www.susana.org/en/rss.xml"],
+  ["Orgs & Research","IWMI water","https://api.rss2json.com/v1/api.json?rss_url=https://www.iwmi.cgiar.org/feed/"],
+  ["Orgs & Research","WSUP urban sanitation","https://news.google.com/rss/search?q=WSUP+urban+sanitation"],
+  ["Orgs & Research","LSHTM sanitation research","https://news.google.com/rss/search?q=LSHTM+sanitation+hygiene+research"],
+  ["Orgs & Research","WaterAid India","https://news.google.com/rss/search?q=WaterAid+India+sanitation"],
+  ["Orgs & Research","Prayas India water sanitation","https://news.google.com/rss/search?q=Prayas+India+water+sanitation"],
+  ["Orgs & Research","TARU sanitation India","https://news.google.com/rss/search?q=TARU+sanitation+India"],
+
+  // ── Events ──────────────────────────────────────────────────
+  ["Events","Sanitation conference India","https://news.google.com/rss/search?q=sanitation+conference+India"],
+  ["Events","WASH conference","https://news.google.com/rss/search?q=WASH+conference"],
+  ["Events","WASH webinar","https://news.google.com/rss/search?q=WASH+webinar"],
+  ["Events","FSM conference India","https://news.google.com/rss/search?q=faecal+sludge+management+conference+India"],
+  ["Events","India WASH workshop","https://news.google.com/rss/search?q=India+WASH+workshop"],
+  ["Events","World Water Week","https://news.google.com/rss/search?q=World+Water+Week+sanitation"],
+  ["Events","World Toilet Day","https://news.google.com/rss/search?q=World+Toilet+Day"],
+  ["Events","Stockholm water prize sanitation","https://news.google.com/rss/search?q=Stockholm+water+prize"],
+  ["Events","UN Water conference sanitation","https://news.google.com/rss/search?q=UN+water+conference+sanitation+2025"],
+
+  // ── India - Incidents ────────────────────────────────────────
+  ["India - Incidents","Manual scavenging Supreme Court","https://news.google.com/rss/search?q=manual+scavenging+Supreme+Court+India"],
+  ["India - Incidents","Safai Karmachari","https://news.google.com/rss/search?q=safai+karmachari"],
+  ["India - Incidents","Septic tank death India","https://news.google.com/rss/search?q=septic+tank+death+India"],
+  ["India - Incidents","Sewer death India","https://news.google.com/rss/search?q=sewer+death+India"],
+  ["India - Incidents","Manual scavenging India","https://news.google.com/rss/search?q=manual+scavenging+India"],
+  ["India - Incidents","Rehabilitation manual scavengers","https://news.google.com/rss/search?q=rehabilitation+manual+scavengers"],
+  ["India - Incidents","Sewage worker accident India","https://news.google.com/rss/search?q=sewage+worker+accident+asphyxiation+India"],
+  ["India - Incidents","Dalit sanitation worker rights","https://news.google.com/rss/search?q=Dalit+sanitation+worker+rights+India"],
+
+  // ── Global - WASH ────────────────────────────────────────────
+  ["Global - WASH","WASH sector global","https://news.google.com/rss/search?q=WASH+sector+global"],
+  ["Global - WASH","Global sanitation policy","https://news.google.com/rss/search?q=global+sanitation+policy"],
+  ["Global - WASH","UN sanitation initiative","https://news.google.com/rss/search?q=UN+sanitation+initiative"],
+  ["Global - WASH","Water sanitation SDG 6","https://news.google.com/rss/search?q=water+sanitation+SDG+6"],
+  ["Global - WASH","WHO sanitation programme","https://news.google.com/rss/search?q=WHO+sanitation+programme"],
+  ["Global - WASH","UNICEF WASH programme","https://news.google.com/rss/search?q=UNICEF+WASH+programme"],
+  ["Global - WASH","JMP WASH progress report","https://news.google.com/rss/search?q=JMP+WASH+progress+report+WHO+UNICEF"],
+  ["Global - WASH","GLAAS sanitation report","https://news.google.com/rss/search?q=GLAAS+sanitation+drinking+water+report"],
+  ["Global - WASH","Open defecation elimination","https://news.google.com/rss/search?q=open+defecation+elimination+global"],
+  ["Global - WASH","USAID water sanitation","https://news.google.com/rss/search?q=USAID+water+sanitation+hygiene"],
+  ["Global - WASH","African sanitation policy","https://news.google.com/rss/search?q=Africa+sanitation+policy+WASH"],
+  ["Global - WASH","Asia sanitation FSM","https://news.google.com/rss/search?q=Asia+sanitation+faecal+sludge"],
+  ["Global - WASH","Climate resilient WASH","https://news.google.com/rss/search?q=climate+resilient+WASH+sanitation"],
+  ["Global - WASH","RWSN rural water sanitation","https://news.google.com/rss/search?q=RWSN+rural+water+sanitation"],
+];
+
+const CAT_META = {
+  "Mechanisation":      { icon:"⚙️",  dot:"#4caf50" },
+  "India - Government": { icon:"🏛️",  dot:"#ff9800" },
+  "Orgs & Research":    { icon:"🔬",  dot:"#4a90d9" },
+  "Events":             { icon:"📅",  dot:"#ab47bc" },
+  "India - Incidents":  { icon:"🚨",  dot:"#e53935" },
+  "Global - WASH":      { icon:"🌍",  dot:"#29b6f6" },
+};
+
+const REFRESH_MS = 6 * 60 * 60 * 1000;
+const BATCH_SIZE = 5;
+const BATCH_DELAY = 1200;
+
+let allArticles = [];
+let readIds = new Set(JSON.parse(localStorage.getItem("sm_read") || "[]"));
+let activeTab = "All";
+let searchQ = "";
+let nextRefresh = null;
+let countdownTimer = null;
+let showUnreadOnly = false;
+
+// ── FETCH ──────────────────────────────────────────────────
+// Uses your Cloudflare Worker proxy — update WORKER_URL after deploying worker
+const WORKER_URL = "https://sanitation-rss.salplainer.workers.dev";
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function parseXML(xmlText) {
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(xmlText, "text/xml");
+  const items = [...xml.querySelectorAll("item")].slice(0, 8);
+  if (items.length > 0) return items.map(el => {
+    const get = tag => el.querySelector(tag)?.textContent?.trim() || "";
+    const link = get("link") || get("guid");
+    return { title: get("title"), link, pubDate: get("pubDate"), description: get("description"), guid: get("guid") };
+  });
+  // Try Atom
+  const entries = [...xml.querySelectorAll("entry")].slice(0, 8);
+  return entries.map(el => {
+    const get = tag => el.querySelector(tag)?.textContent?.trim() || "";
+    const link = el.querySelector("link")?.getAttribute("href") || get("id");
+    return { title: get("title"), link, pubDate: get("published") || get("updated"), description: get("summary") || get("content"), guid: get("id") };
+  });
+}
+
+async function fetchFeed(feed) {
+  const [cat, title, url] = feed;
+  try {
+    const proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return [];
+    const text = await res.text();
+    // Try JSON first (rss2json format), then XML
+    let items = [];
+    try {
+      const json = JSON.parse(text);
+      if (json.status === "ok" && json.items) {
+        items = json.items;
+      } else {
+        items = parseXML(text);
+      }
+    } catch {
+      items = parseXML(text);
+    }
+    return items.map(item => ({
+      id:       item.guid || item.link || item.title,
+      title:    (item.title || "").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/<[^>]+>/g,"").trim(),
+      link:     item.link || "",
+      summary:  stripHtml(item.description || item.content || "").slice(0, 220),
+      pubDate:  item.pubDate || item.published || "",
+      cat, feedTitle: title,
+    })).filter(a => a.title && a.link);
+  } catch(e) {
+    console.warn(`Failed: ${title}`, e.message);
+    return [];
+  }
+}
+
+async function fetchAll() {
+  const btn = document.getElementById("refreshBtn");
+  const bar = document.getElementById("progressBar");
+  const fill = document.getElementById("progressFill");
+  btn.disabled = true; btn.textContent = "⟳ Fetching…";
+  bar.classList.add("active"); fill.style.width = "0%";
+
+  const results = [];
+  for (let i = 0; i < FEEDS.length; i += BATCH_SIZE) {
+    const batch = FEEDS.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(batch.map(fetchFeed));
+    batchResults.forEach(items => results.push(...items));
+    fill.style.width = Math.round(((i + batch.length) / FEEDS.length) * 100) + "%";
+    if (i + BATCH_SIZE < FEEDS.length) await sleep(600);
+  }
+
+  // Deduplicate by title
+  const seen = new Map();
+  for (const a of results) {
+    if (a.title && !seen.has(a.title)) seen.set(a.title, a);
+  }
+  allArticles = [...seen.values()].sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+  btn.disabled = false; btn.textContent = "⟳ Refresh";
+  bar.classList.remove("active");
+
+  const now = new Date();
+  nextRefresh = new Date(now.getTime() + REFRESH_MS);
+  document.getElementById("lastFetched").textContent =
+    `Last updated: ${now.toLocaleTimeString("en-IN",{timeZone:"Asia/Kolkata"})} IST`;
+  document.getElementById("feedCount").textContent = FEEDS.length;
+
+  render();
+  startCountdown();
+  setTimeout(fetchAll, REFRESH_MS);
+}
+
+// ── RENDER ─────────────────────────────────────────────────
+function render() {
+  const filtered = allArticles.filter(a => {
+    if (activeTab !== "All" && a.cat !== activeTab) return false;
+    if (showUnreadOnly && readIds.has(a.id)) return false;
+    if (searchQ && !a.title.toLowerCase().includes(searchQ) &&
+        !a.feedTitle.toLowerCase().includes(searchQ)) return false;
+    return true;
+  });
+
+  const unread = allArticles.filter(a => !readIds.has(a.id));
+  const newBadge = document.getElementById("newBadge");
+  if (unread.length > 0) {
+    newBadge.style.display = "inline"; newBadge.textContent = unread.length + " unread";
+  } else { newBadge.style.display = "none"; }
+
+  document.getElementById("totalCount").textContent = allArticles.length;
+  renderTabs();
+  renderStats();
+
+  const grid = document.getElementById("grid");
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="state-center">
+      <div class="icon">🔍</div>
+      <h3>No articles found</h3>
+      <p>${searchQ ? `No results for "${searchQ}"` : "Try refreshing or changing the filter"}</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((a, i) => {
+    const isNew = !readIds.has(a.id);
+    const ago = timeAgo(a.pubDate);
+    return `<div class="card ${isNew?'is-new':'is-read'}" data-cat="${a.cat}"
+        style="animation-delay:${Math.min(i*0.03,0.5)}s"
+        onclick="markRead('${escId(a.id)}')">
+      ${isNew ? `<div class="new-dot">NEW</div>` : ""}
+      <div class="card-meta">
+        <span class="cat-tag">${CAT_META[a.cat]?.icon||""} ${a.cat}</span>
+        ${ago ? `<span class="card-time">${ago}</span>` : ""}
+      </div>
+      <a class="card-title" href="${a.link}" target="_blank" rel="noopener"
+         onclick="event.stopPropagation();markRead('${escId(a.id)}')">${a.title}</a>
+      ${a.summary ? `<p class="card-summary">${a.summary}…</p>` : ""}
+      <div class="card-footer">📡 ${a.feedTitle}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderTabs() {
+  const cats = ["All", ...Object.keys(CAT_META)];
+  const counts = {};
+  for (const a of allArticles) counts[a.cat] = (counts[a.cat]||0)+1;
+
+  document.getElementById("tabs").innerHTML = cats.map(c => {
+    const cnt = c === "All" ? allArticles.length : (counts[c]||0);
+    const icon = c === "All" ? "📋" : (CAT_META[c]?.icon||"");
+    return `<button class="tab ${activeTab===c?'active':''}"
+      onclick="setTab('${c}')">${icon} ${c} <span class="count">(${cnt})</span></button>`;
+  }).join("");
+}
+
+function renderStats() {
+  const counts = {};
+  for (const a of allArticles) counts[a.cat] = (counts[a.cat]||0)+1;
+  document.getElementById("statsInner").innerHTML =
+    Object.entries(CAT_META).map(([cat, m]) =>
+      `<div class="cat-dot" onclick="setTab('${cat}')">
+        <div class="dot" style="background:${m.dot}"></div>
+        ${m.icon} ${cat.split(" ")[0]}: <strong>${counts[cat]||0}</strong>
+      </div>`
+    ).join("") +
+    `<div class="total-info">${document.getElementById("grid").querySelectorAll?.('.card')?.length||0} shown · ${FEEDS.length} feeds</div>`;
+}
+
+// ── INTERACTIONS ───────────────────────────────────────────
+function setTab(cat) { activeTab = cat; render(); }
+
+function markRead(id) {
+  readIds.add(id);
+  localStorage.setItem("sm_read", JSON.stringify([...readIds]));
+  render();
+}
+
+function markAllRead() {
+  allArticles.forEach(a => readIds.add(a.id));
+  localStorage.setItem("sm_read", JSON.stringify([...readIds]));
+  showUnreadOnly = false; render();
+}
+
+function clearRead() {
+  showUnreadOnly = !showUnreadOnly;
+  render();
+}
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchQ = e.target.value.toLowerCase().trim();
+  render();
+});
+
+window.addEventListener("scroll", () => {
+  const btn = document.getElementById("scrollTop");
+  btn.classList.toggle("visible", window.scrollY > 400);
+});
+
+// ── COUNTDOWN ─────────────────────────────────────────────
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    if (!nextRefresh) return;
+    const diff = nextRefresh - Date.now();
+    if (diff <= 0) { document.getElementById("countdown").textContent = "refreshing…"; return; }
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    document.getElementById("countdown").textContent = `${h}h ${m}m ${s}s`;
+  }, 1000);
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr); if (isNaN(d)) return "";
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 3600) return Math.floor(diff/60) + "m ago";
+  if (diff < 86400) return Math.floor(diff/3600) + "h ago";
+  return Math.floor(diff/86400) + "d ago";
+}
+function stripHtml(h) { return h.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim(); }
+function escId(id) { return (id||"").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
+
+// ── INIT ───────────────────────────────────────────────────
+fetchAll();
+</script>
+</body>
+</html>
