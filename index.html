@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanitation Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f0e8; --paper:#faf7f2; --paper2:#f0ebe0;
+  --ink:#1a1208; --ink2:#3d3020; --ink3:#6b5a40;
+  --rule:#c8b89a; --rule2:#e0d5c0;
+  --accent:#1a4a2a; --red:#8b1a1a;
+  --mech-c:#1a4a2a; --mech-bg:#edf5ee;
+  --govt-c:#7a4500; --govt-bg:#fdf3e7;
+  --orgs-c:#1a2e5a; --orgs-bg:#edf0f8;
+  --evnt-c:#4a1a6a; --evnt-bg:#f5eef8;
+  --inci-c:#8b1a1a; --inci-bg:#fdf0f0;
+  --wash-c:#0a3a5a; --wash-bg:#edf4f8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Source Serif 4',Georgia,serif;min-height:100vh;}
+
+/* MASTHEAD */
+.masthead{background:var(--paper);border-bottom:3px double var(--ink);padding:14px 24px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.mh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:10px;}
+.mh-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);line-height:1.7;}
+.mh-title{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,50px);font-weight:900;color:var(--ink);line-height:1;text-align:center;flex:1;}
+.mh-title em{color:var(--accent);font-style:normal;}
+.mh-tag{display:block;font-family:'Source Serif 4',serif;font-size:11px;font-style:italic;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;border-top:1px solid var(--rule2);border-bottom:1px solid var(--rule2);padding:3px 0;margin-top:3px;text-align:center;}
+.mh-ctrl{display:flex;gap:8px;align-items:center;justify-content:flex-end;}
+.sw{position:relative;}
+.sw input{background:var(--paper2);border:1px solid var(--rule);border-radius:2px;padding:6px 10px 6px 26px;font-family:'JetBrains Mono',monospace;font-size:11px;width:170px;outline:none;color:var(--ink);}
+.sw input:focus{border-color:var(--accent);}
+.sw::before{content:"⌕";position:absolute;left:7px;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:14px;pointer-events:none;}
+.btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 12px;cursor:pointer;border-radius:2px;border:1px solid;transition:all .15s;white-space:nowrap;}
+.btn-ink{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.btn-ink:hover{background:var(--ink2);}
+.btn-ink:disabled{background:var(--ink3);cursor:not-allowed;}
+.btn-g{background:transparent;color:var(--ink3);border-color:var(--rule);}
+.btn-g:hover{border-color:var(--ink3);color:var(--ink);}
+.btn-g.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.prog{height:2px;background:var(--rule2);display:none;}
+.prog.on{display:block;}
+.prog-f{height:100%;background:var(--accent);transition:width .3s;width:0%;}
+.nav{display:flex;overflow-x:auto;border-top:1px solid var(--rule);scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.ntab{font-family:'JetBrains Mono',monospace;font-size:10px;padding:8px 13px;cursor:pointer;border:none;background:transparent;color:var(--ink3);border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s;letter-spacing:.04em;text-transform:uppercase;}
+.ntab:hover{color:var(--ink);}
+.ntab.on{color:var(--ink);font-weight:500;border-bottom-color:var(--ink);}
+.ntab .cn{opacity:.5;margin-left:3px;}
+
+/* STATS STRIP */
+.ss{background:var(--paper2);border-bottom:1px solid var(--rule2);padding:6px 24px;}
+.ss-in{max-width:1300px;margin:0 auto;display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+.cp{display:flex;align-items:center;gap:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);transition:color .15s;}
+.cp:hover{color:var(--ink);}
+.pip{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.cp strong{color:var(--ink);}
+
+/* TOOLBAR */
+.tb{max-width:1300px;margin:0 auto;padding:10px 24px 0;display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.tb-r{margin-left:auto;display:flex;gap:6px;}
+
+/* MAIN */
+main{max-width:1300px;margin:0 auto;padding:14px 24px 40px;}
+
+/* STATS PANEL */
+.sp{display:none;margin-bottom:20px;border:1px solid var(--rule);background:var(--paper);border-radius:2px;}
+.sp.on{display:block;}
+.sp-hd{padding:14px 20px;border-bottom:1px solid var(--rule2);font-family:'Playfair Display',serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:space-between;}
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1px;background:var(--rule2);}
+.sc{background:var(--paper);padding:16px 20px;}
+.sc-l{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.sc-n{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--ink);line-height:1;}
+.sc-s{font-size:11px;color:var(--ink3);margin-top:3px;font-style:italic;}
+.bc{margin-top:14px;}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);width:150px;flex-shrink:0;text-align:right;}
+.bt{flex:1;height:13px;background:var(--rule2);border-radius:1px;overflow:hidden;}
+.bf{height:100%;border-radius:1px;transition:width .6s ease;}
+.bv{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);width:26px;text-align:right;}
+
+/* GRID/LIST */
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1px;background:var(--rule2);}
+.al{display:flex;flex-direction:column;border:1px solid var(--rule2);}
+
+/* CARD */
+.card{background:var(--paper);padding:18px 20px;transition:background .15s;cursor:pointer;position:relative;border-left:3px solid transparent;animation:fi .22s ease both;}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.card:hover{background:var(--paper2);}
+.card.rd{opacity:.58;}
+.card[data-cat="Mechanisation"]     {border-left-color:var(--mech-c);}
+.card[data-cat="India - Government"]{border-left-color:var(--govt-c);}
+.card[data-cat="Orgs & Research"]   {border-left-color:var(--orgs-c);}
+.card[data-cat="Events"]            {border-left-color:var(--evnt-c);}
+.card[data-cat="India - Incidents"] {border-left-color:var(--inci-c);}
+.card[data-cat="Global - WASH"]     {border-left-color:var(--wash-c);}
+.ce{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap;}
+.cl{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;padding:2px 6px;border-radius:1px;}
+.card[data-cat="Mechanisation"] .cl     {background:var(--mech-bg);color:var(--mech-c);}
+.card[data-cat="India - Government"] .cl{background:var(--govt-bg);color:var(--govt-c);}
+.card[data-cat="Orgs & Research"] .cl   {background:var(--orgs-bg);color:var(--orgs-c);}
+.card[data-cat="Events"] .cl            {background:var(--evnt-bg);color:var(--evnt-c);}
+.card[data-cat="India - Incidents"] .cl {background:var(--inci-bg);color:var(--inci-c);}
+.card[data-cat="Global - WASH"] .cl     {background:var(--wash-bg);color:var(--wash-c);}
+.ct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);}
+.nf{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:500;background:var(--red);color:white;padding:2px 5px;border-radius:1px;letter-spacing:.1em;}
+.ttl{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;line-height:1.35;color:var(--ink);text-decoration:none;display:block;margin-bottom:7px;transition:color .15s;}
+.ttl:hover{color:var(--accent);}
+.sm{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:10px;font-weight:300;}
+.cf{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--rule2);padding-top:8px;margin-top:4px;}
+.cs{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);}
+.ca{display:flex;gap:5px;}
+.ab{background:none;border:none;cursor:pointer;padding:3px 5px;font-size:14px;opacity:.35;transition:opacity .15s;border-radius:2px;}
+.ab:hover{opacity:1;background:var(--rule2);}
+.ab.sv{opacity:1;}
+/* list view */
+.al .card{border-bottom:1px solid var(--rule2);padding:11px 18px;display:flex;align-items:flex-start;gap:12px;}
+.al .cb{flex:1;}
+.al .ttl{font-size:14px;margin-bottom:3px;}
+.al .sm{font-size:12px;margin-bottom:5px;}
+.al .cf{border-top:none;padding-top:0;margin-top:0;}
+
+/* SHARE MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;}
+.mo.on{display:flex;}
+.md{background:var(--paper);border:2px solid var(--ink);padding:24px;max-width:400px;width:90%;border-radius:2px;}
+.md-t{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px;}
+.md-s{font-size:13px;color:var(--ink3);font-style:italic;margin-bottom:16px;line-height:1.4;border-bottom:1px solid var(--rule2);padding-bottom:12px;}
+.sbs{display:flex;flex-direction:column;gap:8px;}
+.sb{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--rule);background:var(--paper2);cursor:pointer;border-radius:2px;font-family:'Source Serif 4',serif;font-size:13px;color:var(--ink);text-decoration:none;transition:background .15s;}
+.sb:hover{background:var(--rule2);}
+.si{font-size:18px;width:24px;text-align:center;}
+
+/* EMPTY */
+.ec{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--ink3);}
+.ec h3{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:7px;}
+.ec p{font-size:13px;font-style:italic;}
+.sp2{display:inline-block;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#scrollTop{position:fixed;bottom:22px;right:22px;background:var(--ink);color:var(--paper);border:none;width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:50;}
+#scrollTop.vis{display:flex;}
+@media(max-width:640px){.mh-title{font-size:26px;}.mh-ctrl{width:100%;}.sw input{flex:1;width:100%;}main{padding:12px 14px 40px;}.ag{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="mh-top">
+    <div class="mh-meta" id="mhMeta">Loading…<br><span id="countdown"></span></div>
+    <div>
+      <div class="mh-title">💧 <em>Sanitation</em> Monitor</div>
+      <span class="mh-tag">Mechanisation · Policy · Incidents · Research · Events · Global WASH</span>
+    </div>
+    <div class="mh-ctrl">
+      <div class="sw"><input type="text" id="searchInput" placeholder="Search…"/></div>
+      <button class="btn btn-ink" id="refreshBtn" onclick="fetchAll()">⟳ Refresh</button>
+    </div>
+  </div>
+  <div class="prog" id="prog"><div class="prog-f" id="progF"></div></div>
+  <div class="nav" id="nav"></div>
+</header>
+
+<div class="ss"><div class="ss-in" id="ssIn"></div></div>
+
+<div class="tb">
+  <button class="btn btn-g" id="spBtn" onclick="toggleStats()">📊 Stats</button>
+  <button class="btn btn-g" id="bkBtn" onclick="toggleBookmarks()">🔖 Saved</button>
+  <button class="btn btn-g" id="urBtn" onclick="toggleUnread()">● Unread only</button>
+  <div class="tb-r">
+    <button class="btn btn-g" onclick="markAllRead()">✓ Mark all read</button>
+    <button class="btn btn-g on" id="vGrid" onclick="setView('grid')">⊞</button>
+    <button class="btn btn-g" id="vList" onclick="setView('list')">☰</button>
+  </div>
+</div>
+
+<main>
+  <div class="sp" id="sp">
+    <div class="sp-hd">
+      <span>Intelligence Dashboard</span>
+      <button class="btn btn-g" onclick="toggleStats()" style="font-size:16px;padding:2px 8px">×</button>
+    </div>
+    <div id="spContent"></div>
+  </div>
+  <div class="ag" id="grid">
+    <div class="ec">
+      <div style="font-size:44px;margin-bottom:14px"><span class="sp2">⟳</span></div>
+      <h3>Fetching your feeds…</h3>
+      <p>Loading all sources — takes about 60–90 seconds on first run.</p>
+    </div>
+  </div>
+</main>
+
+<div class="mo" id="mo">
+  <div class="md">
+    <div class="md-t">Share Article</div>
+    <div class="md-s" id="moTitle"></div>
+    <div class="sbs">
+      <a class="sb" id="swа" target="_blank"><span class="si">💬</span>Share on WhatsApp</a>
+      <a class="sb" id="sEmail" target="_blank"><span class="si">✉️</span>Share via Email</a>
+      <button class="sb" id="sCopy" onclick="copyLink()"><span class="si" id="copyIcon">🔗</span>Copy link</button>
+    </div>
+    <button class="btn btn-g" onclick="closeMo()" style="margin-top:12px;width:100%">Cancel</button>
+  </div>
+</div>
+
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+const FEEDS=[
+  ["Mechanisation","Sanitation entrepreneurship & FSM","https://news.google.com/rss/search?q=sanitation+entrepreneurship+feacal+sludge+management"],
+  ["Mechanisation","Robotic sewer cleaning India","https://news.google.com/rss/search?q=robotic+sewer+cleaning+India"],
+  ["Mechanisation","Manhole to Machinehole India","https://news.google.com/rss/search?q=manhole+to+machinehole+India"],
+  ["Mechanisation","Manual scavenging mechanisation","https://news.google.com/rss/search?q=manual+scavenging+mechanisation"],
+  ["Mechanisation","Garv Toilets sanitation","https://news.google.com/rss/search?q=Garv+Toilets+sanitation"],
+  ["Mechanisation","Solinas robot sewer","https://news.google.com/rss/search?q=Solinas+robot+sewer"],
+  ["Mechanisation","Genrobotics Bandicoot","https://news.google.com/rss/search?q=Genrobotics+Bandicoot"],
+  ["Mechanisation","Mechanised sewer cleaning India","https://news.google.com/rss/search?q=mechanised+sewer+cleaning+India"],
+  ["Mechanisation","Desludging technology India","https://news.google.com/rss/search?q=desludging+technology+india"],
+  ["Mechanisation","Sewer worker safety technology","https://news.google.com/rss/search?q=sewer+worker+safety+technology"],
+  ["Mechanisation","FSM technology conference","https://news.google.com/rss/search?q=faecal+sludge+management+technology+conference"],
+  ["Mechanisation","NSKFDC sewer cleaning machine","https://news.google.com/rss/search?q=NSKFDC+sewer+cleaning+machine"],
+  ["India - Government","PIB Jal Shakti sanitation","https://news.google.com/rss/search?q=site:pib.gov.in+sanitation"],
+  ["India - Government","PIB Swachh Bharat","https://news.google.com/rss/search?q=site:pib.gov.in+Swachh+Bharat"],
+  ["India - Government","Jal Shakti Ministry sanitation","https://news.google.com/rss/search?q=Jal+Shakti+Ministry+sanitation"],
+  ["India - Government","DDWS Department Drinking Water","https://news.google.com/rss/search?q=Department+Drinking+Water+Sanitation+India"],
+  ["India - Government","Swachh Bharat Mission Grameen","https://news.google.com/rss/search?q=Swachh+Bharat+Mission+Grameen"],
+  ["India - Government","ODF Plus villages India","https://news.google.com/rss/search?q=ODF+Plus+villages+India"],
+  ["India - Government","Jal Jeevan Mission","https://news.google.com/rss/search?q=Jal+Jeevan+Mission+sanitation"],
+  ["India - Government","AMRUT sanitation urban","https://news.google.com/rss/search?q=AMRUT+sanitation+urban+India"],
+  ["India - Government","Swachh Survekshan rankings","https://news.google.com/rss/search?q=Swachh+Survekshan+2025"],
+  ["India - Government","MoHUA sanitation","https://news.google.com/rss/search?q=Ministry+Housing+Urban+Affairs+sanitation"],
+  ["India - Government","NHRC manual scavenging","https://news.google.com/rss/search?q=NHRC+manual+scavenging+India"],
+  ["Orgs & Research","Global Sanitation Fund","https://news.google.com/rss/search?q=Global+Sanitation+Fund"],
+  ["Orgs & Research","UNICEF sanitation workers","https://news.google.com/rss/search?q=UNICEF+sanitation+workers"],
+  ["Orgs & Research","World Bank sanitation","https://news.google.com/rss/search?q=World+Bank+sanitation"],
+  ["Orgs & Research","NAMASTE sanitation workers","https://news.google.com/rss/search?q=NAMASTE+sanitation+workers"],
+  ["Orgs & Research","CSE faecal sludge","https://news.google.com/rss/search?q=CSE+faecal+sludge+management"],
+  ["Orgs & Research","FSM Alliance","https://news.google.com/rss/search?q=Faecal+Sludge+Management+Alliance"],
+  ["Orgs & Research","India Sanitation Coalition","https://news.google.com/rss/search?q=India+Sanitation+Coalition"],
+  ["Orgs & Research","Gates Foundation sanitation","https://news.google.com/rss/search?q=Gates+Foundation+sanitation"],
+  ["Orgs & Research","Safai Karmachari Andolan","https://news.google.com/rss/search?q=Safai+Karmachari+Andolan"],
+  ["Orgs & Research","WHO sanitation","https://news.google.com/rss/search?q=WHO+sanitation"],
+  ["Orgs & Research","WaterAid sanitation","https://news.google.com/rss/search?q=WaterAid+sanitation"],
+  ["Orgs & Research","Faecal sludge management","https://news.google.com/rss/search?q=faecal+sludge+management"],
+  ["Orgs & Research","Sanitation Learning Hub","https://api.rss2json.com/v1/api.json?rss_url=https://sanitationlearninghub.org/feed/"],
+  ["Orgs & Research","UN Water","https://api.rss2json.com/v1/api.json?rss_url=https://www.unwater.org/rss.xml"],
+  ["Orgs & Research","IRC WASH","https://api.rss2json.com/v1/api.json?rss_url=https://www.ircwash.org/rss.xml"],
+  ["Orgs & Research","CPR India","https://api.rss2json.com/v1/api.json?rss_url=https://cprindia.org/feed/"],
+  ["Orgs & Research","WSUP urban sanitation","https://news.google.com/rss/search?q=WSUP+urban+sanitation"],
+  ["Events","Sanitation conference India","https://news.google.com/rss/search?q=sanitation+conference+India"],
+  ["Events","WASH conference","https://news.google.com/rss/search?q=WASH+conference"],
+  ["Events","WASH webinar","https://news.google.com/rss/search?q=WASH+webinar"],
+  ["Events","FSM conference India","https://news.google.com/rss/search?q=faecal+sludge+management+conference+India"],
+  ["Events","India WASH workshop","https://news.google.com/rss/search?q=India+WASH+workshop"],
+  ["Events","World Water Week","https://news.google.com/rss/search?q=World+Water+Week+sanitation"],
+  ["Events","World Toilet Day","https://news.google.com/rss/search?q=World+Toilet+Day"],
+  ["India - Incidents","Manual scavenging Supreme Court","https://news.google.com/rss/search?q=manual+scavenging+Supreme+Court+India"],
+  ["India - Incidents","Safai Karmachari","https://news.google.com/rss/search?q=safai+karmachari"],
+  ["India - Incidents","Septic tank death India","https://news.google.com/rss/search?q=septic+tank+death+India"],
+  ["India - Incidents","Sewer death India","https://news.google.com/rss/search?q=sewer+death+India"],
+  ["India - Incidents","Manual scavenging India","https://news.google.com/rss/search?q=manual+scavenging+India"],
+  ["India - Incidents","Rehabilitation manual scavengers","https://news.google.com/rss/search?q=rehabilitation+manual+scavengers"],
+  ["India - Incidents","Dalit sanitation worker rights","https://news.google.com/rss/search?q=Dalit+sanitation+worker+rights+India"],
+  ["Global - WASH","WASH sector global","https://news.google.com/rss/search?q=WASH+sector+global"],
+  ["Global - WASH","Global sanitation policy","https://news.google.com/rss/search?q=global+sanitation+policy"],
+  ["Global - WASH","UN sanitation initiative","https://news.google.com/rss/search?q=UN+sanitation+initiative"],
+  ["Global - WASH","Water sanitation SDG 6","https://news.google.com/rss/search?q=water+sanitation+SDG+6"],
+  ["Global - WASH","WHO sanitation programme","https://news.google.com/rss/search?q=WHO+sanitation+programme"],
+  ["Global - WASH","UNICEF WASH programme","https://news.google.com/rss/search?q=UNICEF+WASH+programme"],
+  ["Global - WASH","JMP WASH progress report","https://news.google.com/rss/search?q=JMP+WASH+progress+report+WHO+UNICEF"],
+  ["Global - WASH","Open defecation elimination","https://news.google.com/rss/search?q=open+defecation+elimination+global"],
+  ["Global - WASH","USAID water sanitation","https://news.google.com/rss/search?q=USAID+water+sanitation+hygiene"],
+  ["Global - WASH","Climate resilient WASH","https://news.google.com/rss/search?q=climate+resilient+WASH+sanitation"],
+  ["Global - WASH","RWSN rural water sanitation","https://news.google.com/rss/search?q=RWSN+rural+water+sanitation"],
+];
+
+const CM={
+  "Mechanisation":      {icon:"⚙️",dot:"#1a4a2a",bc:"#1a4a2a"},
+  "India - Government": {icon:"🏛️",dot:"#7a4500",bc:"#7a4500"},
+  "Orgs & Research":    {icon:"🔬",dot:"#1a2e5a",bc:"#1a2e5a"},
+  "Events":             {icon:"📅",dot:"#4a1a6a",bc:"#4a1a6a"},
+  "India - Incidents":  {icon:"🚨",dot:"#8b1a1a",bc:"#8b1a1a"},
+  "Global - WASH":      {icon:"🌍",dot:"#0a3a5a",bc:"#0a3a5a"},
+};
+
+const WORKER="https://sanitation-rss.salplainer.workers.dev";
+const REMS=6*60*60*1000;
+const BS=5;
+
+let all=[],reads=new Set(JSON.parse(localStorage.getItem("sr")||"[]")),
+    saves=new Set(JSON.parse(localStorage.getItem("ss")||"[]")),
+    tab="All",sq="",nr=null,ct=null,uo=false,bk=false,vm="grid",sha=null;
+
+function sl(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function px(x){
+  try{
+    const p=new DOMParser(),d=p.parseFromString(x,"text/xml");
+    const its=[...d.querySelectorAll("item")].slice(0,8);
+    if(its.length)return its.map(e=>{
+      const g=t=>e.querySelector(t)?.textContent?.trim()||"";
+      return{title:g("title"),link:g("link")||g("guid"),pubDate:g("pubDate"),description:g("description"),guid:g("guid")};
+    });
+    return[...d.querySelectorAll("entry")].slice(0,8).map(e=>{
+      const g=t=>e.querySelector(t)?.textContent?.trim()||"";
+      return{title:g("title"),link:e.querySelector("link")?.getAttribute("href")||g("id"),pubDate:g("published")||g("updated"),description:g("summary")||g("content"),guid:g("id")};
+    });
+  }catch{return[];}
+}
+
+async function ff(feed){
+  const[cat,title,url]=feed;
+  try{
+    const isJ=url.includes("rss2json");
+    const pu=isJ?url+"&count=8":`${WORKER}/?url=${encodeURIComponent(url)}`;
+    const r=await fetch(pu,{signal:AbortSignal.timeout(12000)});
+    if(!r.ok)return[];
+    const t=await r.text();
+    let its=[];
+    try{const j=JSON.parse(t);if(j.status==="ok"&&j.items)its=j.items;else its=px(t);}catch{its=px(t);}
+    return its.map(i=>({
+      id:i.guid||i.link||i.title,
+      title:(i.title||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/<[^>]+>/g,"").trim(),
+      link:i.link||"",
+      summary:(i.description||i.content||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,200),
+      pubDate:i.pubDate||i.published||"",
+      cat,feedTitle:title,
+    })).filter(a=>a.title&&a.link);
+  }catch{return[];}
+}
+
+async function fetchAll(){
+  const btn=document.getElementById("refreshBtn"),bar=document.getElementById("prog"),fill=document.getElementById("progF");
+  btn.disabled=true;btn.textContent="⟳ Fetching…";bar.classList.add("on");fill.style.width="0%";
+  const res=[];
+  for(let i=0;i<FEEDS.length;i+=BS){
+    const b=FEEDS.slice(i,i+BS),br=await Promise.all(b.map(ff));
+    br.forEach(it=>res.push(...it));
+    fill.style.width=Math.round(((i+b.length)/FEEDS.length)*100)+"%";
+    if(i+BS<FEEDS.length)await sl(600);
+  }
+  const seen=new Map();
+  for(const a of res)if(a.title&&!seen.has(a.title))seen.set(a.title,a);
+  all=[...seen.values()].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
+  btn.disabled=false;btn.textContent="⟳ Refresh";bar.classList.remove("on");
+  const now=new Date();nr=new Date(now.getTime()+REMS);
+  document.getElementById("mhMeta").innerHTML=now.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+'<br><span id="countdown"></span>';
+  render();startCd();setTimeout(fetchAll,REMS);
+}
+
+function gf(){
+  return all.filter(a=>{
+    if(bk&&!saves.has(a.id))return false;
+    if(tab!=="All"&&a.cat!==tab)return false;
+    if(uo&&reads.has(a.id))return false;
+    if(sq&&!a.title.toLowerCase().includes(sq)&&!a.feedTitle.toLowerCase().includes(sq))return false;
+    return true;
+  });
+}
+
+function render(){renderNav();renderSS();renderGrid();renderSP();
+  const u=all.filter(a=>!reads.has(a.id)).length;
+  document.getElementById("urBtn").textContent=u>0?`● Unread (${u})`:"● Unread only";
+  document.getElementById("bkBtn").textContent=`🔖 Saved${saves.size>0?" ("+saves.size+")":""}`;
+}
+
+function renderNav(){
+  const cats=["All",...Object.keys(CM)],cts={};
+  all.forEach(a=>cts[a.cat]=(cts[a.cat]||0)+1);
+  document.getElementById("nav").innerHTML=cats.map(c=>{
+    const cnt=c==="All"?all.length:(cts[c]||0),ico=c==="All"?"":CM[c]?.icon+" ";
+    return`<button class="ntab ${tab===c?"on":""}" onclick="setTab('${c}')">${ico}${c}<span class="cn">(${cnt})</span></button>`;
+  }).join("");
+}
+
+function renderSS(){
+  const cts={};all.forEach(a=>cts[a.cat]=(cts[a.cat]||0)+1);
+  document.getElementById("ssIn").innerHTML=
+    Object.entries(CM).map(([c,m])=>`<div class="cp" onclick="setTab('${c}')"><div class="pip" style="background:${m.dot}"></div>${m.icon} ${c}: <strong>${cts[c]||0}</strong></div>`).join("")+
+    `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3)">${all.length} total · ${FEEDS.length} feeds</span>`;
+}
+
+function renderGrid(){
+  const fil=gf(),grid=document.getElementById("grid");
+  grid.className=vm==="list"?"al":"ag";
+  if(all.length===0){grid.innerHTML=`<div class="ec"><div style="font-size:44px"><span class="sp2">⟳</span></div><h3>Fetching feeds…</h3><p>Loading all sources.</p></div>`;return;}
+  if(fil.length===0){grid.innerHTML=`<div class="ec"><h3>No articles found</h3><p>${sq?`No results for "${sq}"`:bk?"No saved articles yet — click 🔖 on any article":"Try a different filter"}</p></div>`;return;}
+  grid.innerHTML=fil.map((a,i)=>{
+    const isN=!reads.has(a.id),isS=saves.has(a.id),ago=ta(a.pubDate);
+    const sid=esc(a.id),stl=a.title.replace(/`/g,"").replace(/'/g,"\\'").replace(/"/g,"&quot;"),slk=a.link.replace(/"/g,"&quot;");
+    return`<div class="card ${isN?"":"rd"}" data-cat="${a.cat}" style="animation-delay:${Math.min(i*.02,.4)}s" onclick="mr('${sid}')">
+      <div class="ce">
+        <span class="cl">${CM[a.cat]?.icon||""} ${a.cat}</span>
+        ${isN?'<span class="nf">NEW</span>':""}
+        ${ago?`<span class="ct">${ago}</span>`:""}
+      </div>
+      ${vm==="list"?'<div class="cb">':''}
+      <a class="ttl" href="${slk}" target="_blank" rel="noopener" onclick="event.stopPropagation();mr('${sid}')">${a.title}</a>
+      ${a.summary?`<p class="sm">${a.summary}…</p>`:""}
+      <div class="cf">
+        <span class="cs">📡 ${a.feedTitle}</span>
+        <div class="ca">
+          <button class="ab ${isS?"sv":""}" title="${isS?"Unsave":"Save"}" onclick="event.stopPropagation();ts('${sid}')">${isS?"🔖":"🔖"}</button>
+          <button class="ab" title="Share" onclick="event.stopPropagation();openShare('${sid}','${stl}','${slk}')">📤</button>
+        </div>
+      </div>
+      ${vm==="list"?'</div>':''}
+    </div>`;
+  }).join("");
+}
+
+function renderSP(){
+  const cts={},wk=Date.now()-7*24*60*60*1000,wcts={};
+  all.forEach(a=>{cts[a.cat]=(cts[a.cat]||0)+1;if(new Date(a.pubDate)>wk)wcts[a.cat]=(wcts[a.cat]||0)+1;});
+  const tot=all.length,tw=Object.values(wcts).reduce((s,v)=>s+v,0),mx=Math.max(...Object.values(cts),1);
+  document.getElementById("spContent").innerHTML=`
+    <div class="sg">
+      <div class="sc"><div class="sc-l">Total Articles</div><div class="sc-n">${tot}</div><div class="sc-s">all categories</div></div>
+      <div class="sc"><div class="sc-l">This Week</div><div class="sc-n">${tw}</div><div class="sc-s">last 7 days</div></div>
+      <div class="sc"><div class="sc-l">Feeds Active</div><div class="sc-n">${FEEDS.length}</div><div class="sc-s">RSS sources</div></div>
+      <div class="sc"><div class="sc-l">Saved</div><div class="sc-n">${saves.size}</div><div class="sc-s">bookmarked</div></div>
+    </div>
+    <div style="padding:18px 22px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Articles by Category</div>
+      <div class="bc">${Object.entries(CM).map(([c,m])=>`<div class="br"><div class="bl">${m.icon} ${c}</div><div class="bt"><div class="bf" style="width:${Math.round(((cts[c]||0)/mx)*100)}%;background:${m.bc}"></div></div><div class="bv">${cts[c]||0}</div></div>`).join("")}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px">This Week</div>
+      <div class="bc">${Object.entries(CM).map(([c,m])=>`<div class="br"><div class="bl">${m.icon} ${c}</div><div class="bt"><div class="bf" style="width:${Math.round(((wcts[c]||0)/Math.max(tw,1))*100)}%;background:${m.bc}"></div></div><div class="bv">${wcts[c]||0}</div></div>`).join("")}</div>
+    </div>`;
+}
+
+function setTab(c){tab=c;render();}
+function setView(v){vm=v;document.getElementById("vGrid").classList.toggle("on",v==="grid");document.getElementById("vList").classList.toggle("on",v==="list");render();}
+function mr(id){reads.add(id);localStorage.setItem("sr",JSON.stringify([...reads]));render();}
+function markAllRead(){all.forEach(a=>reads.add(a.id));localStorage.setItem("sr",JSON.stringify([...reads]));render();}
+function toggleUnread(){uo=!uo;bk=false;document.getElementById("urBtn").classList.toggle("on",uo);document.getElementById("bkBtn").classList.remove("on");render();}
+function toggleBookmarks(){bk=!bk;uo=false;document.getElementById("bkBtn").classList.toggle("on",bk);document.getElementById("urBtn").classList.remove("on");render();}
+function ts(id){if(saves.has(id))saves.delete(id);else saves.add(id);localStorage.setItem("ss",JSON.stringify([...saves]));render();}
+function toggleStats(){const p=document.getElementById("sp");p.classList.toggle("on");document.getElementById("spBtn").classList.toggle("on",p.classList.contains("on"));if(p.classList.contains("on"))renderSP();}
+
+function openShare(id,title,link){
+  sha={id,title,link};
+  document.getElementById("moTitle").textContent=decodeURIComponent(title.replace(/\\'/g,"'"));
+  const txt=encodeURIComponent(title.replace(/\\'/g,"'")+" — Sanitation Monitor");
+  document.getElementById("swа").href=`https://wa.me/?text=${txt}%0A${encodeURIComponent(link)}`;
+  document.getElementById("sEmail").href=`mailto:?subject=${txt}&body=${encodeURIComponent(link)}`;
+  document.getElementById("mo").classList.add("on");
+}
+function closeMo(){document.getElementById("mo").classList.remove("on");}
+function copyLink(){
+  if(sha)navigator.clipboard.writeText(sha.link).then(()=>{
+    document.getElementById("copyIcon").textContent="✅";
+    setTimeout(()=>document.getElementById("copyIcon").textContent="🔗",2000);
+  });
+}
+document.getElementById("mo").addEventListener("click",e=>{if(e.target===document.getElementById("mo"))closeMo();});
+
+function startCd(){
+  if(ct)clearInterval(ct);
+  ct=setInterval(()=>{
+    const el=document.getElementById("countdown");if(!el||!nr)return;
+    const d=nr-Date.now();if(d<=0){el.textContent="Refreshing…";return;}
+    const h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000),s=Math.floor((d%60000)/1000);
+    el.textContent=`Next refresh in ${h}h ${m}m ${s}s`;
+  },1000);
+}
+
+document.getElementById("searchInput").addEventListener("input",e=>{sq=e.target.value.toLowerCase().trim();render();});
+window.addEventListener("scroll",()=>document.getElementById("scrollTop").classList.toggle("vis",window.scrollY>500));
+
+function ta(d){if(!d)return"";const dt=new Date(d);if(isNaN(dt))return"";const s=(Date.now()-dt)/1000;if(s<3600)return Math.floor(s/60)+"m ago";if(s<86400)return Math.floor(s/3600)+"h ago";return Math.floor(s/86400)+"d ago";}
+function esc(id){return(id||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;");}
+
+fetchAll();
+</script>
+</body>
+</html>
